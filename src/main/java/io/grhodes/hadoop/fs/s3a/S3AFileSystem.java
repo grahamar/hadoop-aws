@@ -874,7 +874,6 @@ public class S3AFileSystem extends FileSystem {
           throw e;
         }
       } catch (AmazonClientException e) {
-        printAmazonClientException(e);
         throw e;
       }
 
@@ -904,7 +903,6 @@ public class S3AFileSystem extends FileSystem {
             throw e;
           }
         } catch (AmazonClientException e) {
-          printAmazonClientException(e);
           throw e;
         }
       }
@@ -950,7 +948,6 @@ public class S3AFileSystem extends FileSystem {
         throw e;
       }
     } catch (AmazonClientException e) {
-      printAmazonClientException(e);
       throw e;
     }
 
@@ -1238,21 +1235,13 @@ public class S3AFileSystem extends FileSystem {
   }
 
   private void printAmazonServiceException(AmazonServiceException ase) {
-    LOG.info("Caught an AmazonServiceException, which means your request made it " +
-        "to Amazon S3, but was rejected with an error response for some reason.");
-    LOG.info("Error Message: " + ase.getMessage());
-    LOG.info("HTTP Status Code: " + ase.getStatusCode());
-    LOG.info("AWS Error Code: " + ase.getErrorCode());
-    LOG.info("Error Type: " + ase.getErrorType());
-    LOG.info("Request ID: " + ase.getRequestId());
-    LOG.info("Class Name: " + ase.getClass().getName());
-  }
-
-  private void printAmazonClientException(AmazonClientException ace) {
-    LOG.info("Caught an AmazonClientException, which means the client encountered " +
-        "a serious internal problem while trying to communicate with S3, " +
-        "such as not being able to access the network.");
-    LOG.info("Error Message: {}" + ace, ace);
+    LOG.info("Caught an AmazonServiceException {}", ase.toString());
+    LOG.info("Error Message: {}", ase.getMessage());
+    LOG.info("HTTP Status Code: {}", ase.getStatusCode());
+    LOG.info("AWS Error Code: {}", ase.getErrorCode());
+    LOG.info("Error Type: {}", ase.getErrorType());
+    LOG.info("Request ID: {}", ase.getRequestId());
+    LOG.info("Stack", ase);
   }
 
 }
