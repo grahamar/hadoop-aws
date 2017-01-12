@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,6 +38,7 @@ import com.amazonaws.event.ProgressListener;
 import com.amazonaws.event.ProgressEvent;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
 import org.apache.hadoop.conf.Configuration;
@@ -153,6 +155,23 @@ public class S3AFileSystem extends FileSystem {
     serverSideEncryptionAlgorithm = conf.get(SERVER_SIDE_ENCRYPTION_ALGORITHM);
 
     setConf(conf);
+  }
+
+
+  /**
+   * truncate S3 style
+   * @param f
+   * @param newLength
+   * @return
+   * @throws IOException
+   */
+  public boolean truncate(Path f, final long newLength) throws IOException {
+    try(InputStream in = open(f)) {
+      try (OutputStream out = create(f)) {
+        IOUtils.copyLarge(in, out, 0, newLength);
+      }
+    }
+    return true;
   }
 
   void initProxySupport(Configuration conf, ClientConfiguration awsConf,
@@ -339,9 +358,9 @@ public class S3AFileSystem extends FileSystem {
                                    Progressable progress) throws IOException {
     String key = pathToKey(f);
 
-    if (!overwrite && exists(f)) {
-      throw new FileAlreadyExistsException(f + " already exists");
-    }
+//    if (!overwrite && exists(f)) {
+//      throw new FileAlreadyExistsException(f + " already exists");
+//    }
     if (getConf().getBoolean(FAST_UPLOAD, DEFAULT_FAST_UPLOAD)) {
       return new FSDataOutputStream(new S3AFastOutputStream(s3, this, bucket,
           key, progress, statistics, cannedACL,
