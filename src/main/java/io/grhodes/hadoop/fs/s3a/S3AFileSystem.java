@@ -19,6 +19,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProviderChain;
 
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -221,7 +222,7 @@ public class S3AFileSystem extends FileSystem {
   private void initAmazonS3Client(Configuration conf,
                                   AWSCredentialsProviderChain credentials, ClientConfiguration awsConf)
       throws IllegalArgumentException {
-    s3 = new AmazonS3Client(credentials, awsConf);
+    s3 = new AmazonS3Client(new BasicAWSCredentials(conf.get("fs.s3a.access.key"),conf.get("fs.s3a.secret.key")), awsConf);
     String endPoint = conf.getTrimmed(ENDPOINT,"");
     if (!endPoint.isEmpty()) {
       try {
@@ -386,6 +387,36 @@ public class S3AFileSystem extends FileSystem {
   }
 
 
+  @Override
+  public boolean rename(Path src, Path dst) throws IOException {
+    int countdown = 10;
+    while (true){
+      try {
+        if (renameInternal(src, dst)) {
+          return true;
+        } else {
+          try {
+            Thread.sleep(10);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          if (--countdown == 0) {
+            return false;
+          }
+        }
+      } catch (IOException e) {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e1) {
+          e1.printStackTrace();
+        }
+        if (--countdown == 0) {
+          throw e;
+        }
+      }
+    }
+  }
+
   /**
    * Renames Path src to Path dst.  Can take place on local fs
    * or remote DFS.
@@ -405,7 +436,7 @@ public class S3AFileSystem extends FileSystem {
    * @throws IOException on failure
    * @return true if rename is successful
    */
-  public boolean rename(Path src, Path dst) throws IOException {
+  public boolean renameInternal(Path src, Path dst) throws IOException {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Rename path {} to {}", src, dst);
     }
