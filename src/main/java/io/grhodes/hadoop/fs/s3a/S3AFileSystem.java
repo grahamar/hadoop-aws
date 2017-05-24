@@ -222,7 +222,7 @@ public class S3AFileSystem extends FileSystem {
   private void initAmazonS3Client(Configuration conf,
                                   AWSCredentialsProviderChain credentials, ClientConfiguration awsConf)
       throws IllegalArgumentException {
-    s3 = new AmazonS3Client(new BasicAWSCredentials(conf.get("fs.s3a.access.key"),conf.get("fs.s3a.secret.key")), awsConf);
+    s3 = new AmazonS3Client(credentials, awsConf);
     String endPoint = conf.getTrimmed(ENDPOINT,"");
     if (!endPoint.isEmpty()) {
       try {
