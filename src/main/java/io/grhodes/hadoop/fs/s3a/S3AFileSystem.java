@@ -20,7 +20,9 @@ import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSCredentialsProviderChain;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -40,6 +42,14 @@ import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.event.ProgressListener;
 import com.amazonaws.event.ProgressEvent;
 
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
+import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
+import com.amazonaws.services.securitytoken.model.Credentials;
+import com.amazonaws.services.securitytoken.model.GetSessionTokenRequest;
+import com.amazonaws.services.securitytoken.model.GetSessionTokenResult;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -55,6 +65,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
 
+import static com.amazonaws.regions.Regions.US_EAST_1;
 import static io.grhodes.hadoop.fs.s3a.Constants.*;
 
 import org.slf4j.Logger;
@@ -224,8 +235,21 @@ public class S3AFileSystem extends FileSystem {
   private void initAmazonS3Client(Configuration conf,
                                   AWSCredentialsProviderChain credentials, ClientConfiguration awsConf)
       throws IllegalArgumentException {
-    s3 = new AmazonS3Client(credentials, awsConf);
-    s3.setRegion(Regions.getCurrentRegion());
+      String assumeRoleArn = conf.get("aws.assume.role.arn","");
+      if (assumeRoleArn.length() > 0 ) {
+        AWSSecurityTokenService client =  AWSSecurityTokenServiceClientBuilder.standard()
+              .withRegion(Regions.US_EAST_1)
+              .withCredentials(credentials)
+              .withClientConfiguration(awsConf)
+              .build();
+      s3 = new AmazonS3Client(
+             new  STSAssumeRoleSessionCredentialsProvider.Builder(assumeRoleArn,"reporting-s3-access")
+              .withStsClient(client).build());
+
+    } else {
+      s3 = new AmazonS3Client(credentials, awsConf);
+    }
+    s3.setRegion(Region.getRegion(Regions.US_EAST_1));// Regions.getCurrentRegion());
     String endPoint = conf.getTrimmed(ENDPOINT,"");
     if (!endPoint.isEmpty()) {
       try {
