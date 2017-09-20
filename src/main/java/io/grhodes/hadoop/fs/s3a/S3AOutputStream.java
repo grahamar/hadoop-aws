@@ -9,6 +9,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerConfiguration;
 import com.amazonaws.services.s3.transfer.Upload;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -80,6 +81,12 @@ public class S3AOutputStream extends OutputStream {
   @Override
   public void flush() throws IOException {
     backupStream.flush();
+  }
+
+  public File copyBuffer() throws IOException {
+    File copy = new File(backupFile.toPath().toString()+"_");
+    FileUtils.copyFile(backupFile,copy);
+    return copy;
   }
 
   @Override

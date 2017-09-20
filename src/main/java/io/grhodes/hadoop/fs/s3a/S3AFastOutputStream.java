@@ -337,7 +337,7 @@ public class S3AFastOutputStream extends OutputStream {
 
     public List<PartETag> waitForAllPartUploads() throws IOException {
       try {
-        return Futures.allAsList(partETagsFutures).get();
+        return new ArrayList<>(Futures.allAsList(partETagsFutures).get());
       } catch (InterruptedException ie) {
         LOG.warn("Interrupted partUpload:" + ie, ie);
         Thread.currentThread().interrupt();
