@@ -1,4 +1,4 @@
-package io.grhodes.hadoop.fs.s3a;
+package org.apache.hadoop.fs.s3a;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,8 +50,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
 
-import static io.grhodes.hadoop.fs.s3a.Constants.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,13 +93,13 @@ public class S3AFileSystem extends FileSystem {
     bucket = name.getHost();
 
     ClientConfiguration awsConf = new ClientConfiguration();
-    awsConf.setMaxConnections(conf.getInt(MAXIMUM_CONNECTIONS, DEFAULT_MAXIMUM_CONNECTIONS));
-    boolean secureConnections = conf.getBoolean(SECURE_CONNECTIONS, DEFAULT_SECURE_CONNECTIONS);
+    awsConf.setMaxConnections(conf.getInt(Constants.MAXIMUM_CONNECTIONS, Constants.DEFAULT_MAXIMUM_CONNECTIONS));
+    boolean secureConnections = conf.getBoolean(Constants.SECURE_CONNECTIONS, Constants.DEFAULT_SECURE_CONNECTIONS);
     awsConf.setProtocol(secureConnections ?  Protocol.HTTPS : Protocol.HTTP);
-    awsConf.setMaxErrorRetry(conf.getInt(MAX_ERROR_RETRIES, DEFAULT_MAX_ERROR_RETRIES));
-    awsConf.setConnectionTimeout(conf.getInt(ESTABLISH_TIMEOUT, DEFAULT_ESTABLISH_TIMEOUT));
-    awsConf.setSocketTimeout(conf.getInt(SOCKET_TIMEOUT, DEFAULT_SOCKET_TIMEOUT));
-    String signerOverride = conf.getTrimmed(SIGNING_ALGORITHM, "");
+    awsConf.setMaxErrorRetry(conf.getInt(Constants.MAX_ERROR_RETRIES, Constants.DEFAULT_MAX_ERROR_RETRIES));
+    awsConf.setConnectionTimeout(conf.getInt(Constants.ESTABLISH_TIMEOUT, Constants.DEFAULT_ESTABLISH_TIMEOUT));
+    awsConf.setSocketTimeout(conf.getInt(Constants.SOCKET_TIMEOUT, Constants.DEFAULT_SOCKET_TIMEOUT));
+    String signerOverride = conf.getTrimmed(Constants.SIGNING_ALGORITHM, "");
     if(!signerOverride.isEmpty()) {
       awsConf.setSignerOverride(signerOverride);
     }
@@ -110,32 +108,32 @@ public class S3AFileSystem extends FileSystem {
 
     initAmazonS3Client(conf, credentials, awsConf);
 
-    maxKeys = conf.getInt(MAX_PAGING_KEYS, DEFAULT_MAX_PAGING_KEYS);
-    partSize = conf.getLong(MULTIPART_SIZE, DEFAULT_MULTIPART_SIZE);
-    multiPartThreshold = conf.getLong(MIN_MULTIPART_THRESHOLD, DEFAULT_MIN_MULTIPART_THRESHOLD);
-    enableMultiObjectsDelete = conf.getBoolean(ENABLE_MULTI_DELETE, true);
+    maxKeys = conf.getInt(Constants.MAX_PAGING_KEYS, Constants.DEFAULT_MAX_PAGING_KEYS);
+    partSize = conf.getLong(Constants.MULTIPART_SIZE, Constants.DEFAULT_MULTIPART_SIZE);
+    multiPartThreshold = conf.getLong(Constants.MIN_MULTIPART_THRESHOLD, Constants.DEFAULT_MIN_MULTIPART_THRESHOLD);
+    enableMultiObjectsDelete = conf.getBoolean(Constants.ENABLE_MULTI_DELETE, true);
 
     if (partSize < 5 * 1024 * 1024) {
-      LOG.error(MULTIPART_SIZE + " must be at least 5 MB");
+      LOG.error(Constants.MULTIPART_SIZE + " must be at least 5 MB");
       partSize = 5 * 1024 * 1024;
     }
 
     if (multiPartThreshold < 5 * 1024 * 1024) {
-      LOG.error(MIN_MULTIPART_THRESHOLD + " must be at least 5 MB");
+      LOG.error(Constants.MIN_MULTIPART_THRESHOLD + " must be at least 5 MB");
       multiPartThreshold = 5 * 1024 * 1024;
     }
 
-    int maxThreads = conf.getInt(MAX_THREADS, DEFAULT_MAX_THREADS);
+    int maxThreads = conf.getInt(Constants.MAX_THREADS, Constants.DEFAULT_MAX_THREADS);
     if (maxThreads < 2) {
-      LOG.warn(MAX_THREADS + " must be at least 2: forcing to 2.");
+      LOG.warn(Constants.MAX_THREADS + " must be at least 2: forcing to 2.");
       maxThreads = 2;
     }
-    int totalTasks = conf.getInt(MAX_TOTAL_TASKS, DEFAULT_MAX_TOTAL_TASKS);
+    int totalTasks = conf.getInt(Constants.MAX_TOTAL_TASKS, Constants.DEFAULT_MAX_TOTAL_TASKS);
     if (totalTasks < 1) {
-      LOG.warn(MAX_TOTAL_TASKS + "must be at least 1: forcing to 1.");
+      LOG.warn(Constants.MAX_TOTAL_TASKS + "must be at least 1: forcing to 1.");
       totalTasks = 1;
     }
-    long keepAliveTime = conf.getLong(KEEPALIVE_TIME, DEFAULT_KEEPALIVE_TIME);
+    long keepAliveTime = conf.getLong(Constants.KEEPALIVE_TIME, Constants.DEFAULT_KEEPALIVE_TIME);
     threadPoolExecutor = new BlockingThreadPoolExecutorService(maxThreads,
         maxThreads + totalTasks, keepAliveTime, TimeUnit.SECONDS,
         "s3a-transfer-shared");
@@ -150,7 +148,7 @@ public class S3AFileSystem extends FileSystem {
 
     initMultipartUploads(conf);
 
-    serverSideEncryptionAlgorithm = conf.get(SERVER_SIDE_ENCRYPTION_ALGORITHM);
+    serverSideEncryptionAlgorithm = conf.get(Constants.SERVER_SIDE_ENCRYPTION_ALGORITHM);
 
     setConf(conf);
   }
@@ -158,8 +156,8 @@ public class S3AFileSystem extends FileSystem {
   void initProxySupport(Configuration conf, ClientConfiguration awsConf,
                         boolean secureConnections) throws IllegalArgumentException,
       IllegalArgumentException {
-    String proxyHost = conf.getTrimmed(PROXY_HOST, "");
-    int proxyPort = conf.getInt(PROXY_PORT, -1);
+    String proxyHost = conf.getTrimmed(Constants.PROXY_HOST, "");
+    int proxyPort = conf.getInt(Constants.PROXY_PORT, -1);
     if (!proxyHost.isEmpty()) {
       awsConf.setProxyHost(proxyHost);
       if (proxyPort >= 0) {
@@ -173,18 +171,18 @@ public class S3AFileSystem extends FileSystem {
           awsConf.setProxyPort(80);
         }
       }
-      String proxyUsername = conf.getTrimmed(PROXY_USERNAME);
-      String proxyPassword = conf.getTrimmed(PROXY_PASSWORD);
+      String proxyUsername = conf.getTrimmed(Constants.PROXY_USERNAME);
+      String proxyPassword = conf.getTrimmed(Constants.PROXY_PASSWORD);
       if ((proxyUsername == null) != (proxyPassword == null)) {
-        String msg = "Proxy error: " + PROXY_USERNAME + " or " +
-            PROXY_PASSWORD + " set without the other.";
+        String msg = "Proxy error: " + Constants.PROXY_USERNAME + " or " +
+            Constants.PROXY_PASSWORD + " set without the other.";
         LOG.error(msg);
         throw new IllegalArgumentException(msg);
       }
       awsConf.setProxyUsername(proxyUsername);
       awsConf.setProxyPassword(proxyPassword);
-      awsConf.setProxyDomain(conf.getTrimmed(PROXY_DOMAIN));
-      awsConf.setProxyWorkstation(conf.getTrimmed(PROXY_WORKSTATION));
+      awsConf.setProxyDomain(conf.getTrimmed(Constants.PROXY_DOMAIN));
+      awsConf.setProxyWorkstation(conf.getTrimmed(Constants.PROXY_WORKSTATION));
       if (LOG.isDebugEnabled()) {
         LOG.debug("Using proxy server {}:{} as user {} with password {} on " +
                 "domain {} as workstation {}", awsConf.getProxyHost(),
@@ -193,7 +191,7 @@ public class S3AFileSystem extends FileSystem {
             awsConf.getProxyWorkstation());
       }
     } else if (proxyPort >= 0) {
-      String msg = "Proxy error: " + PROXY_PORT + " set without " + PROXY_HOST;
+      String msg = "Proxy error: " + Constants.PROXY_PORT + " set without " + Constants.PROXY_HOST;
       LOG.error(msg);
       throw new IllegalArgumentException(msg);
     }
@@ -203,7 +201,7 @@ public class S3AFileSystem extends FileSystem {
                                   AWSCredentialsProviderChain credentials, ClientConfiguration awsConf)
       throws IllegalArgumentException {
     s3 = new AmazonS3Client(credentials, awsConf);
-    String endPoint = conf.getTrimmed(ENDPOINT,"");
+    String endPoint = conf.getTrimmed(Constants.ENDPOINT,"");
     if (!endPoint.isEmpty()) {
       try {
         s3.setEndpoint(endPoint);
@@ -225,7 +223,7 @@ public class S3AFileSystem extends FileSystem {
   }
 
   private void initCannedAcls(Configuration conf) {
-    String cannedACLName = conf.get(CANNED_ACL, DEFAULT_CANNED_ACL);
+    String cannedACLName = conf.get(Constants.CANNED_ACL, Constants.DEFAULT_CANNED_ACL);
     if (!cannedACLName.isEmpty()) {
       cannedACL = CannedAccessControlList.valueOf(cannedACLName);
     } else {
@@ -234,10 +232,10 @@ public class S3AFileSystem extends FileSystem {
   }
 
   private void initMultipartUploads(Configuration conf) {
-    boolean purgeExistingMultipart = conf.getBoolean(PURGE_EXISTING_MULTIPART,
-        DEFAULT_PURGE_EXISTING_MULTIPART);
-    long purgeExistingMultipartAge = conf.getLong(PURGE_EXISTING_MULTIPART_AGE,
-        DEFAULT_PURGE_EXISTING_MULTIPART_AGE);
+    boolean purgeExistingMultipart = conf.getBoolean(Constants.PURGE_EXISTING_MULTIPART,
+        Constants.DEFAULT_PURGE_EXISTING_MULTIPART);
+    long purgeExistingMultipartAge = conf.getLong(Constants.PURGE_EXISTING_MULTIPART_AGE,
+        Constants.DEFAULT_PURGE_EXISTING_MULTIPART_AGE);
 
     if (purgeExistingMultipart) {
       Date purgeBefore = new Date(new Date().getTime() - purgeExistingMultipartAge*1000);
@@ -342,7 +340,7 @@ public class S3AFileSystem extends FileSystem {
     if (!overwrite && exists(f)) {
       throw new FileAlreadyExistsException(f + " already exists");
     }
-    if (getConf().getBoolean(FAST_UPLOAD, DEFAULT_FAST_UPLOAD)) {
+    if (getConf().getBoolean(Constants.FAST_UPLOAD, Constants.DEFAULT_FAST_UPLOAD)) {
       return new FSDataOutputStream(new S3AFastOutputStream(s3, this, bucket,
           key, progress, statistics, cannedACL,
           serverSideEncryptionAlgorithm, partSize, multiPartThreshold,
@@ -716,7 +714,7 @@ public class S3AFileSystem extends FileSystem {
           Path keyPath = keyToPath(summary.getKey()).makeQualified(uri, workingDir);
           // Skip over keys that are ourselves and old S3N _$folder$ files
           if (keyPath.equals(fQualified) ||
-              summary.getKey().endsWith(S3N_FOLDER_SUFFIX)) {
+              summary.getKey().endsWith(Constants.S3N_FOLDER_SUFFIX)) {
             if (LOG.isDebugEnabled()) {
               LOG.debug("Ignoring: " + keyPath);
             }
@@ -1231,7 +1229,7 @@ public class S3AFileSystem extends FileSystem {
   @Deprecated
   public long getDefaultBlockSize() {
     // default to 32MB: large enough to minimize the impact of seeks
-    return getConf().getLong(FS_S3A_BLOCK_SIZE, DEFAULT_BLOCKSIZE);
+    return getConf().getLong(Constants.FS_S3A_BLOCK_SIZE, DEFAULT_BLOCKSIZE);
   }
 
   private void printAmazonServiceException(AmazonServiceException ase) {

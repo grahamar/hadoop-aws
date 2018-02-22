@@ -1,4 +1,4 @@
-package io.grhodes.hadoop.fs.s3a;
+package org.apache.hadoop.fs.s3a;
 
 public class Constants {
   // s3 access key

@@ -1,4 +1,4 @@
-package io.grhodes.hadoop.fs.s3a;
+package org.apache.hadoop.fs.s3a;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
