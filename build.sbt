@@ -7,6 +7,26 @@ version := "git describe --tags --dirty --always".!!.stripPrefix("v").trim
 scalaVersion := "2.11.12"
 
 licenses += ("Apache-2.0", url("http://opensource.org/licenses/apache-2.0"))
+homepage := Some(url("https://github.com/grahamar/hadoop-aws"))
+
+scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/grahamar/hadoop-aws"),
+    "scm:git:git@github.com:grahamar/hadoop-aws.git"
+  )
+)
+
+developers := List(
+  Developer(
+    id    = "grahamar",
+    name  = "Graham Rhodes",
+    email = "postmaster@grhodes.io",
+    url   = url("https://github.com/grahamar")
+  )
+)
+
+publishMavenStyle := true
+pomIncludeRepository := { _ => false }
 
 libraryDependencies ++= Seq(
   "com.google.guava" % "guava" % "11.0.2",
@@ -15,4 +35,3 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-annotations" % "2.8.7",
   "org.apache.hadoop" % "hadoop-common" % "2.7.5" % Configurations.Provided
 )
-
