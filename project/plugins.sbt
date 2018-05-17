@@ -1,2 +1,2 @@
-addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.4")
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.1")
