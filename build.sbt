@@ -1,8 +1,10 @@
+import sys.process.Process
+
 name := "hadoop-aws"
 
 organization := "io.grhodes"
 
-version := "git describe --tags --dirty --always".!!.stripPrefix("v").trim
+version := Process("git describe --tags --dirty --always").lineStream_!.head.stripPrefix("v").trim
 
 scalaVersion := "2.11.12"
 
@@ -11,8 +13,8 @@ homepage := Some(url("https://github.com/grahamar/hadoop-aws"))
 
 scmInfo := Some(
   ScmInfo(
-    url("https://github.com/grahamar/hadoop-aws"),
-    "scm:git:git@github.com:grahamar/hadoop-aws.git"
+    browseUrl = url("https://github.com/grahamar/hadoop-aws"),
+    connection = "scm:git:git@github.com:grahamar/hadoop-aws.git"
   )
 )
 
@@ -25,6 +27,8 @@ developers := List(
   )
 )
 
+publish := PgpKeys.publishSigned.value
+publishLocal := PgpKeys.publishLocalSigned.value
 publishMavenStyle := true
 pomIncludeRepository := { _ => false }
 
