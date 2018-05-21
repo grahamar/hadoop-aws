@@ -37,5 +37,5 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.283",
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.7",
   "com.fasterxml.jackson.core" % "jackson-annotations" % "2.8.7",
-  "org.apache.hadoop" % "hadoop-common" % "2.7.5" % Configurations.Provided
+  "org.apache.hadoop" % "hadoop-common" % "2.8.3" % Provided
 )
